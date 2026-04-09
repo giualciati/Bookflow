@@ -9,6 +9,8 @@ import SignInScreen from "./src/screens/SignInScreen";
 import SecurityQuestionsScreen from "./src/screens/SecurityQuestionsScreen";
 import LogInScreen from "./src/screens/LogInScreen";
 import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
+import BookDetailsScreen from "./src/screens/BookDetailsScreen";
+import MyLibraryScreen from "./src/screens/MyLibraryScreen";
 
 const Stack = createStackNavigator();
 
@@ -34,6 +36,8 @@ export default function App() {
             name="ForgotPassword"
             component={ForgotPasswordScreen}
           />
+          <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
+          <Stack.Screen name="MyLibrary" component={MyLibraryScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

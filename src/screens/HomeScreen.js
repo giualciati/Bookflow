@@ -185,6 +185,14 @@ export default function HomeScreen({ navigation }) {
         >
           <Ionicons name="add" size={28} color="#fff" />
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={() => navigation.navigate("BookDetails")}
+        >
+          <Ionicons name="book-outline" size={24} color="#fff" />
+          <Text style={styles.bookButtonText}>Ver livro</Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
