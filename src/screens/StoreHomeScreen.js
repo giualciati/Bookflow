@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, FlatList, ActivityIndicator, Image, View } from 'react-native';
-import styled from 'styled-components/native';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme';
-import { getAllLivros, getAllCategorias } from '../services/database';
-import BottomNavBar from '../components/BottomNavBar';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ScrollView,
+  FlatList,
+  ActivityIndicator,
+  View,
+  ImageBackground,
+} from "react-native";
+import styled from "styled-components/native";
+import { Ionicons } from "@expo/vector-icons";
+import { theme } from "../theme";
+import { getAllLivros } from "../services/database";
+import BottomNavBar from "../components/BottomNavBar";
 
 // ─── Styled Components ────────────────────────────────────────────────────────
 
@@ -56,33 +62,13 @@ const BannerScroll = styled.ScrollView`
   margin-bottom: 24px;
 `;
 
-const BannerCard = styled.View`
+const BannerImage = styled(ImageBackground)`
   width: 280px;
   height: 140px;
   border-radius: 12px;
   margin-right: 16px;
-  justify-content: center;
   overflow: hidden;
-  position: relative;
-`;
-
-const BannerBgTeal = styled(BannerCard)`
-  background-color: ${theme.colors.accent};
-  padding: 16px;
-  align-items:flex-end;
-`;
-
-const BannerBgBlack = styled(BannerCard)`
-  background-color: #000;
-  padding: 16px;
-`;
-
-const BannerTitle = styled.Text`
-  color: #fff;
-  font-size: 28px;
-  font-weight: 900;
-  line-height: 32px;
-  text-align: right;
+  justify-content: center;
 `;
 
 // Categorias e Livros
@@ -123,14 +109,24 @@ const FallbackTitle = styled.Text`
   color: ${theme.colors.text};
 `;
 
-// Mock para quando DB estiver vazio
+// Mock
 const MOCK_BOOKS = [
-  { id: 1, titulo: 'A Hipótese do Amor', categoria: 'Romance', preco: 49.90 },
-  { id: 2, titulo: 'Jane Eyre', categoria: 'Romance', preco: 34.90 },
-  { id: 3, titulo: 'Nós Já Moramos Aqui', categoria: 'Suspense', preco: 45.00 },
-  { id: 4, titulo: 'A Paciente Silenciosa', categoria: 'Suspense', preco: 55.00 },
-  { id: 5, titulo: 'O Poder do Hábito', categoria: 'Autoajuda', preco: 39.90 },
-  { id: 6, titulo: 'Um Livro de Auto-ajuda', categoria: 'Autoajuda', preco: 29.90 },
+  { id: 1, titulo: "A Hipótese do Amor", categoria: "Romance", preco: 49.9 },
+  { id: 2, titulo: "Jane Eyre", categoria: "Romance", preco: 34.9 },
+  { id: 3, titulo: "Nós Já Moramos Aqui", categoria: "Suspense", preco: 45.0 },
+  {
+    id: 4,
+    titulo: "A Paciente Silenciosa",
+    categoria: "Suspense",
+    preco: 55.0,
+  },
+  { id: 5, titulo: "O Poder do Hábito", categoria: "Autoajuda", preco: 39.9 },
+  {
+    id: 6,
+    titulo: "Um Livro de Auto-ajuda",
+    categoria: "Autoajuda",
+    preco: 29.9,
+  },
 ];
 
 export default function StoreHomeScreen({ navigation }) {
@@ -142,28 +138,30 @@ export default function StoreHomeScreen({ navigation }) {
       setLoading(true);
       const books = await getAllLivros();
       setAllBooks(books.length > 0 ? books : MOCK_BOOKS);
-    } catch (_) {
+    } catch {
       setAllBooks(MOCK_BOOKS);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const getBooksByCategory = (catName) => {
-    return allBooks.filter(b => b.categoria && b.categoria.toLowerCase() === catName.toLowerCase());
+    return allBooks.filter(
+      (b) => b.categoria?.toLowerCase() === catName.toLowerCase(),
+    );
   };
-
-  const romanceBooks = getBooksByCategory('Romance');
-  const suspenseBooks = getBooksByCategory('Suspense');
-  const autoAjudaBooks = getBooksByCategory('Autoajuda');
 
   const renderBookGroup = (title, data) => {
     if (data.length === 0) return null;
+
     return (
       <View>
         <SectionTitle>{title}</SectionTitle>
+
         <BooksScroll
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -172,16 +170,24 @@ export default function StoreHomeScreen({ navigation }) {
           contentContainerStyle={{ paddingRight: 16 }}
           renderItem={({ item }) => (
             <BookCoverButton
-              onPress={() => {
-                // Ao invés de comprar direto, talvez ir para detalhes ou confirmar,
-                // mantendo o fluxo existente do StoreHomeScreen anterior:
-                navigation.navigate('OrderConfirmation', {
-                  itens: [{ livro_id: item.id, titulo: item.titulo, quantidade: 1, preco_unitario: item.preco }],
-                });
-              }}
+              onPress={() =>
+                navigation.navigate("BookDetails", {
+                  itens: [
+                    {
+                      livro_id: item.id,
+                      titulo: item.titulo,
+                      quantidade: 1,
+                      preco_unitario: item.preco,
+                    },
+                  ],
+                })
+              }
             >
               {item.imagem_url ? (
-                <BookCoverImage source={{ uri: item.imagem_url }} resizeMode="cover" />
+                <BookCoverImage
+                  source={{ uri: item.imagem_url }}
+                  resizeMode="cover"
+                />
               ) : (
                 <FallbackTitle>{item.titulo}</FallbackTitle>
               )}
@@ -194,47 +200,71 @@ export default function StoreHomeScreen({ navigation }) {
 
   return (
     <Screen>
+      {/* HEADER */}
       <HeaderGroup>
         <HamburgerBtn>
           <Ionicons name="menu" size={28} color={theme.colors.textSecondary} />
         </HamburgerBtn>
 
         <HeaderRightGroup>
-          <HeaderIconBtn onPress={() => navigation.navigate('Search')}>
-            <Ionicons name="search-outline" size={20} color={theme.colors.white} />
+          <HeaderIconBtn onPress={() => navigation.navigate("Search")}>
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color={theme.colors.white}
+            />
           </HeaderIconBtn>
-          <HeaderIconBtn>
-            <Ionicons name="bag-handle-outline" size={20} color={theme.colors.white} />
+
+          <HeaderIconBtn onPress={() => navigation.navigate("Cart")}>
+            <Ionicons
+              name="bag-handle-outline"
+              size={20}
+              color={theme.colors.white}
+            />
           </HeaderIconBtn>
         </HeaderRightGroup>
       </HeaderGroup>
 
+      {/* CONTEÚDO */}
       <Content showsVerticalScrollIndicator={false}>
         <Greeting>Olá, Usuário!</Greeting>
 
-        <BannerScroll horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
-          <BannerBgTeal>
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-              <BannerTitle>Não</BannerTitle>
-              <BannerTitle>Ficção</BannerTitle>
-            </View>
-          </BannerBgTeal>
-          <BannerBgBlack>
-            {/* Placeholder para a segunda imagem do banner */}
-          </BannerBgBlack>
+        {/* BANNERS COM IMAGEM */}
+        <BannerScroll
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 16 }}
+        >
+          <BannerImage
+            source={require("../../assets/img/NaoFiccao.jpg")}
+            imageStyle={{ borderRadius: 12 }}
+            resizeMode="cover"
+          />
+
+          <BannerImage
+            source={require("../../assets/img/Terror.jpg")}
+            imageStyle={{ borderRadius: 12 }}
+            resizeMode="cover"
+          />
         </BannerScroll>
 
+        {/* LISTAS */}
         {loading ? (
-          <ActivityIndicator size="large" color={theme.colors.secondary} style={{ marginTop: 40 }} />
+          <ActivityIndicator
+            size="large"
+            color={theme.colors.secondary}
+            style={{ marginTop: 40 }}
+          />
         ) : (
           <View>
-            {renderBookGroup('Romance', romanceBooks.length > 0 ? romanceBooks : MOCK_BOOKS.filter(b => b.categoria === 'Romance'))}
-            {renderBookGroup('Suspense', suspenseBooks.length > 0 ? suspenseBooks : MOCK_BOOKS.filter(b => b.categoria === 'Suspense'))}
-            {renderBookGroup('Autoajuda', autoAjudaBooks.length > 0 ? autoAjudaBooks : MOCK_BOOKS.filter(b => b.categoria === 'Autoajuda'))}
+            {renderBookGroup("Romance", getBooksByCategory("Romance"))}
+            {renderBookGroup("Suspense", getBooksByCategory("Suspense"))}
+            {renderBookGroup("Autoajuda", getBooksByCategory("Autoajuda"))}
           </View>
         )}
       </Content>
 
+      {/* NAVBAR */}
       <BottomNavBar active="home" navigation={navigation} />
     </Screen>
   );

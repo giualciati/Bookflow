@@ -5,13 +5,14 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 // ─── Telas originais (Giulia) ─────────────────────────────────────────────────
-import HomeScreen from "./src/screens/HomeScreen";
 import SignInScreen from "./src/screens/SignInScreen";
 import SecurityQuestionsScreen from "./src/screens/SecurityQuestionsScreen";
 import LogInScreen from "./src/screens/LogInScreen";
 import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
 import BookDetailsScreen from "./src/screens/BookDetailsScreen";
 import MyLibraryScreen from "./src/screens/MyLibraryScreen";
+import CartScreen from "./src/screens/CartScreen";
+import CheckoutScreen from "./src/screens/CheckoutScreen";
 
 // ─── Telas novas (Lucas) ──────────────────────────────────────────────────────
 import StoreHomeScreen from "./src/screens/StoreHomeScreen";
@@ -41,15 +42,22 @@ export default function App() {
         >
           {/* ── Rotas originais (Giulia) ── */}
           <Stack.Screen name="Login" component={LogInScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="SignIn" component={SignInScreen} />
-          <Stack.Screen name="SecurityQuestions" component={SecurityQuestionsScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen
+            name="SecurityQuestions"
+            component={SecurityQuestionsScreen}
+          />
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+          />
           <Stack.Screen name="BookDetails" component={BookDetailsScreen} />
+          <Stack.Screen name="Checkout" component={CheckoutScreen} />
           <Stack.Screen name="MyLibrary" component={MyLibraryScreen} />
+          <Stack.Screen name="Cart" component={CartScreen} />
 
           {/* ── Rotas novas (Lucas) ── */}
-          <Stack.Screen name="StoreHome" component={StoreHomeScreen} />
+          <Stack.Screen name="Home" component={StoreHomeScreen} />
           <Stack.Screen name="Search" component={SearchScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
@@ -57,10 +65,22 @@ export default function App() {
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
           <Stack.Screen name="AddressList" component={AddressListScreen} />
           <Stack.Screen name="AddressForm" component={AddressFormScreen} />
-          <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} />
-          <Stack.Screen name="AdminProductList" component={AdminProductListScreen} />
-          <Stack.Screen name="AdminProductForm" component={AdminProductFormScreen} />
-          <Stack.Screen name="AdminCategoryList" component={AdminCategoryListScreen} />
+          <Stack.Screen
+            name="OrderConfirmation"
+            component={OrderConfirmationScreen}
+          />
+          <Stack.Screen
+            name="AdminProductList"
+            component={AdminProductListScreen}
+          />
+          <Stack.Screen
+            name="AdminProductForm"
+            component={AdminProductFormScreen}
+          />
+          <Stack.Screen
+            name="AdminCategoryList"
+            component={AdminCategoryListScreen}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
