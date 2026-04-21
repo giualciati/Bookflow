@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { initDatabase } from "./src/services/database";
 import JsonDataScreen from "./src/screens/JsonDataScreen";
 import UserListScreen from "./src/screens/UserListScreen";
+import AdminDashboardScreen from "./src/screens/AdminDashboardScreen";
 
 // ─── Telas originais (Giulia) ─────────────────────────────────────────────────
 import SignInScreen from "./src/screens/SignInScreen";
@@ -43,7 +44,7 @@ export default function App() {
       <NavigationContainer>
         <StatusBar style="auto" />
         <Stack.Navigator
-          initialRouteName="AdminCategoryList"
+          initialRouteName="SingIn"
           screenOptions={{
             headerShown: false,
           }}
@@ -71,6 +72,10 @@ export default function App() {
           <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
           <Stack.Screen name="AddressList" component={AddressListScreen} />
           <Stack.Screen name="AddressForm" component={AddressFormScreen} />
+          <Stack.Screen
+            name="AdminDashboard"
+            component={AdminDashboardScreen}
+          />
           <Stack.Screen
             name="OrderConfirmation"
             component={OrderConfirmationScreen}

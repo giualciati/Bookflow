@@ -1,20 +1,16 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 
-// O expo-sqlite (openDatabaseSync) causa tela branca na Web sem a configuração do WASM.
-// Fazemos um mock simples para a Web, para que pelo menos o layout do site carregue (mas sem salvar de verdade).
 const isWeb = Platform.OS === 'web';
 
 const db = isWeb
   ? {
-    execAsync: async () => { },
-    getAllAsync: async () => [],
-    getFirstAsync: async () => null,
-    runAsync: async () => ({ changes: 0, lastInsertRowId: 1 }),
-  }
+      execAsync: async () => {},
+      getAllAsync: async () => [],
+      getFirstAsync: async () => null,
+      runAsync: async () => ({ changes: 0, lastInsertRowId: 1 }),
+    }
   : SQLite.openDatabaseSync('usuarios.db');
-
-// ─── Inicialização ────────────────────────────────────────────────────────────
 
 export const initDatabase = async () => {
   try {
@@ -82,14 +78,16 @@ export const initDatabase = async () => {
       );
     `);
 
-    // Migrações — colunas adicionais
     const migrations = [
       'ALTER TABLE usuarios ADD COLUMN cpf TEXT;',
       'ALTER TABLE usuarios ADD COLUMN data_nascimento TEXT;',
       'ALTER TABLE livros ADD COLUMN estoque INTEGER DEFAULT 0;',
     ];
+
     for (const sql of migrations) {
-      try { await db.execAsync(sql); } catch (_) { /* coluna já existe */ }
+      try {
+        await db.execAsync(sql);
+      } catch (_) {}
     }
 
     console.log('✅ Banco de dados inicializado com sucesso');
@@ -99,8 +97,6 @@ export const initDatabase = async () => {
     return false;
   }
 };
-
-// ─── Usuários ─────────────────────────────────────────────────────────────────
 
 export const getAllUsuarios = async () => {
   try {
@@ -120,22 +116,31 @@ export const getUsuarioById = async (id) => {
   }
 };
 
-export const createUsuario = async (nome, email, idade) => {
+export const createUsuario = async (nome, email, cpf, data_nascimento) => {
   try {
     const result = await db.runAsync(
-      [nome, email, cpf || null, idade || null]
+      'INSERT INTO usuarios (nome, email, cpf, data_nascimento) VALUES (?, ?, ?, ?)',
+      [nome, email, cpf || null, data_nascimento || null]
     );
-    return { id: result.lastInsertRowId, nome, email, cpf, data_nascimento };
+
+    return {
+      id: result.lastInsertRowId,
+      nome,
+      email,
+      cpf,
+      data_nascimento,
+    };
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
     throw error;
   }
 };
 
-export const updateUsuario = async (id, nome, email, idade, cpf, data_nascimento) => {
+export const updateUsuario = async (id, nome, email, cpf, data_nascimento) => {
   try {
     const result = await db.runAsync(
-      [nome, email, idade || null, cpf || null, data_nascimento || null, id]
+      'UPDATE usuarios SET nome = ?, email = ?, cpf = ?, data_nascimento = ? WHERE id = ?',
+      [nome, email, cpf || null, data_nascimento || null, id]
     );
     return result.changes > 0;
   } catch (error) {
@@ -163,8 +168,6 @@ export const clearAllUsuarios = async () => {
     throw error;
   }
 };
-
-// ─── Categorias (US10) ────────────────────────────────────────────────────────
 
 export const getAllCategorias = async () => {
   try {
@@ -210,8 +213,6 @@ export const deleteCategoria = async (id) => {
     throw error;
   }
 };
-
-// ─── Livros (RF01, US10) ──────────────────────────────────────────────────────
 
 export const getAllLivros = async () => {
   try {
@@ -279,8 +280,6 @@ export const deleteLivro = async (id) => {
   }
 };
 
-// ─── Endereços (RF09) ─────────────────────────────────────────────────────────
-
 export const getEnderecosByUsuario = async (usuario_id) => {
   try {
     return await db.getAllAsync(
@@ -299,8 +298,17 @@ export const createEndereco = async (usuario_id, logradouro, numero, complemento
       `INSERT INTO enderecos
         (usuario_id, logradouro, numero, complemento, bairro, cidade, estado, cep, padrao)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [usuario_id, logradouro, numero || null, complemento || null,
-        bairro || null, cidade || null, estado || null, cep || null, padrao ? 1 : 0]
+      [
+        usuario_id,
+        logradouro,
+        numero || null,
+        complemento || null,
+        bairro || null,
+        cidade || null,
+        estado || null,
+        cep || null,
+        padrao ? 1 : 0,
+      ]
     );
     return { id: result.lastInsertRowId };
   } catch (error) {
@@ -316,8 +324,17 @@ export const updateEndereco = async (id, logradouro, numero, complemento, bairro
        SET logradouro = ?, numero = ?, complemento = ?, bairro = ?,
            cidade = ?, estado = ?, cep = ?, padrao = ?
        WHERE id = ?`,
-      [logradouro, numero || null, complemento || null, bairro || null,
-        cidade || null, estado || null, cep || null, padrao ? 1 : 0, id]
+      [
+        logradouro,
+        numero || null,
+        complemento || null,
+        bairro || null,
+        cidade || null,
+        estado || null,
+        cep || null,
+        padrao ? 1 : 0,
+        id,
+      ]
     );
     return result.changes > 0;
   } catch (error) {
@@ -335,8 +352,6 @@ export const deleteEndereco = async (id) => {
     throw error;
   }
 };
-
-// ─── Pedidos (RF11, US09) ─────────────────────────────────────────────────────
 
 export const getPedidosByUsuario = async (usuario_id) => {
   try {
@@ -374,10 +389,6 @@ export const getPedidoItens = async (pedido_id) => {
   }
 };
 
-/**
- * Cria um pedido e seus itens em uma única transação.
- * itens: [{ livro_id, quantidade, preco_unitario }]
- */
 export const createPedido = async (usuario_id, endereco_id, forma_pagamento, itens) => {
   try {
     const total = itens.reduce((sum, i) => sum + i.quantidade * i.preco_unitario, 0);

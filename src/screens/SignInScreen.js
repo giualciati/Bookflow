@@ -25,7 +25,7 @@ export default function SignInScreen({ navigation }) {
         return;
       }
 
-      await createUsuario(nome, email, cpf, dataNascimento, null);
+      await createUsuario(nome, email, cpf, dataNascimento);
 
       Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
       navigation.navigate("UserList");
