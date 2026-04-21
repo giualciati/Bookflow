@@ -123,10 +123,9 @@ export const getUsuarioById = async (id) => {
 export const createUsuario = async (nome, email, idade) => {
   try {
     const result = await db.runAsync(
-      'INSERT INTO usuarios (nome, email, idade) VALUES (?, ?, ?)',
-      [nome, email, idade || null]
+      [nome, email, cpf || null, idade || null]
     );
-    return { id: result.lastInsertRowId, nome, email, idade };
+    return { id: result.lastInsertRowId, nome, email, cpf, data_nascimento };
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
     throw error;
@@ -136,7 +135,6 @@ export const createUsuario = async (nome, email, idade) => {
 export const updateUsuario = async (id, nome, email, idade, cpf, data_nascimento) => {
   try {
     const result = await db.runAsync(
-      'UPDATE usuarios SET nome = ?, email = ?, idade = ?, cpf = ?, data_nascimento = ? WHERE id = ?',
       [nome, email, idade || null, cpf || null, data_nascimento || null, id]
     );
     return result.changes > 0;

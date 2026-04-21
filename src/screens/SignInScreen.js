@@ -1,4 +1,3 @@
-import { createUsuario } from "../services/database";
 import React, { useState } from "react";
 import {
   View,
@@ -6,9 +5,10 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-
+import { createUsuario } from "../services/database";
 import { Color, Border, FontSize, FontFamily } from "../styles/GlobalStyles";
 
 export default function SignInScreen({ navigation }) {
@@ -20,16 +20,18 @@ export default function SignInScreen({ navigation }) {
 
   const handleCadastro = async () => {
     try {
-      console.log("Botão cadastrar clicado");
-      console.log({ nome, cpf, dataNascimento, email, senha });
+      if (!nome || !email) {
+        Alert.alert("Atenção", "Preencha nome e e-mail.");
+        return;
+      }
 
       await createUsuario(nome, email, cpf, dataNascimento, null);
 
-      console.log("Usuário salvo no banco com sucesso");
-
-      navigation.navigate("SecurityQuestions");
+      Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
+      navigation.navigate("UserList");
     } catch (error) {
       console.log("Erro ao salvar usuário:", error);
+      Alert.alert("Erro", "Não foi possível salvar o usuário.");
     }
   };
 
@@ -79,25 +81,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Color.colorSteelblue,
   },
-
   container: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
-
   card: {
     backgroundColor: "#fff",
     width: "100%",
     borderRadius: Border.br_30,
     padding: 20,
-    elevation: 5, // Android
-    shadowColor: "#000", // iOS
+    elevation: 5,
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
-
   title: {
     fontSize: 28,
     fontFamily: FontFamily.poppinsBold,
@@ -105,20 +104,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
-
   label: {
     fontSize: FontSize.fs_16,
     fontFamily: FontFamily.poppinsSemiBold,
     marginBottom: 5,
   },
-
   input: {
     backgroundColor: Color.colorWhitesmoke,
     borderRadius: Border.br_15,
     padding: 12,
     marginBottom: 15,
   },
-
   button: {
     backgroundColor: Color.colorSteelblue,
     borderRadius: 50,
@@ -126,7 +122,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-
   buttonText: {
     color: "#fff",
     fontFamily: FontFamily.poppinsSemiBold,

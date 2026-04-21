@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { initDatabase } from "./src/services/database";
 import JsonDataScreen from "./src/screens/JsonDataScreen";
+import UserListScreen from "./src/screens/UserListScreen";
 
 // ─── Telas originais (Giulia) ─────────────────────────────────────────────────
 import SignInScreen from "./src/screens/SignInScreen";
@@ -36,17 +37,17 @@ export default function App() {
   useEffect(() => {
     initDatabase();
   }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <StatusBar style="auto" />
         <Stack.Navigator
-          initialRouteName="Login"
+          initialRouteName="AdminCategoryList"
           screenOptions={{
             headerShown: false,
           }}
         >
-          {/* ── Rotas originais (Giulia) ── */}
           <Stack.Screen name="Login" component={LogInScreen} />
           <Stack.Screen name="SignIn" component={SignInScreen} />
           <Stack.Screen
@@ -62,7 +63,6 @@ export default function App() {
           <Stack.Screen name="MyLibrary" component={MyLibraryScreen} />
           <Stack.Screen name="Cart" component={CartScreen} />
 
-          {/* ── Rotas novas (Lucas) ── */}
           <Stack.Screen name="Home" component={StoreHomeScreen} />
           <Stack.Screen name="Search" component={SearchScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -83,10 +83,8 @@ export default function App() {
             name="AdminProductForm"
             component={AdminProductFormScreen}
           />
-          <Stack.Screen
-            name="JsonData"
-            component={JsonDataScreen}
-          />
+          <Stack.Screen name="JsonData" component={JsonDataScreen} />
+          <Stack.Screen name="UserList" component={UserListScreen} />
           <Stack.Screen
             name="AdminCategoryList"
             component={AdminCategoryListScreen}
