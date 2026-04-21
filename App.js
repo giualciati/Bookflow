@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { initDatabase } from "./src/services/database";
+import JsonDataScreen from "./src/screens/JsonDataScreen";
 
 // ─── Telas originais (Giulia) ─────────────────────────────────────────────────
 import SignInScreen from "./src/screens/SignInScreen";
@@ -31,11 +33,15 @@ import AdminCategoryListScreen from "./src/screens/AdminCategoryListScreen";
 const Stack = createStackNavigator();
 
 export default function App() {
+  useEffect(() => {
+    initDatabase();
+  }, []);
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <StatusBar style="auto" />
         <Stack.Navigator
+          initialRouteName="Login"
           screenOptions={{
             headerShown: false,
           }}
@@ -76,6 +82,10 @@ export default function App() {
           <Stack.Screen
             name="AdminProductForm"
             component={AdminProductFormScreen}
+          />
+          <Stack.Screen
+            name="JsonData"
+            component={JsonDataScreen}
           />
           <Stack.Screen
             name="AdminCategoryList"

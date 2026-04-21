@@ -1,3 +1,4 @@
+import { createUsuario } from "../services/database";
 import React, { useState } from "react";
 import {
   View,
@@ -17,10 +18,19 @@ export default function SignInScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
-  const handleCadastro = () => {
-    console.log({ nome, cpf, dataNascimento, email, senha });
+  const handleCadastro = async () => {
+    try {
+      console.log("Botão cadastrar clicado");
+      console.log({ nome, cpf, dataNascimento, email, senha });
 
-    navigation.navigate("SecurityQuestions");
+      await createUsuario(nome, email, cpf, dataNascimento, null);
+
+      console.log("Usuário salvo no banco com sucesso");
+
+      navigation.navigate("SecurityQuestions");
+    } catch (error) {
+      console.log("Erro ao salvar usuário:", error);
+    }
   };
 
   return (

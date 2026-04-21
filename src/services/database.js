@@ -7,11 +7,11 @@ const isWeb = Platform.OS === 'web';
 
 const db = isWeb
   ? {
-      execAsync: async () => {},
-      getAllAsync: async () => [],
-      getFirstAsync: async () => null,
-      runAsync: async () => ({ changes: 0, lastInsertRowId: 1 }),
-    }
+    execAsync: async () => { },
+    getAllAsync: async () => [],
+    getFirstAsync: async () => null,
+    runAsync: async () => ({ changes: 0, lastInsertRowId: 1 }),
+  }
   : SQLite.openDatabaseSync('usuarios.db');
 
 // ─── Inicialização ────────────────────────────────────────────────────────────
@@ -302,7 +302,7 @@ export const createEndereco = async (usuario_id, logradouro, numero, complemento
         (usuario_id, logradouro, numero, complemento, bairro, cidade, estado, cep, padrao)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [usuario_id, logradouro, numero || null, complemento || null,
-       bairro || null, cidade || null, estado || null, cep || null, padrao ? 1 : 0]
+        bairro || null, cidade || null, estado || null, cep || null, padrao ? 1 : 0]
     );
     return { id: result.lastInsertRowId };
   } catch (error) {
@@ -319,7 +319,7 @@ export const updateEndereco = async (id, logradouro, numero, complemento, bairro
            cidade = ?, estado = ?, cep = ?, padrao = ?
        WHERE id = ?`,
       [logradouro, numero || null, complemento || null, bairro || null,
-       cidade || null, estado || null, cep || null, padrao ? 1 : 0, id]
+        cidade || null, estado || null, cep || null, padrao ? 1 : 0, id]
     );
     return result.changes > 0;
   } catch (error) {
@@ -400,6 +400,81 @@ export const createPedido = async (usuario_id, endereco_id, forma_pagamento, ite
     return { id: pedido_id, total };
   } catch (error) {
     console.error('Erro ao criar pedido:', error);
+    throw error;
+  }
+};
+
+export const gerarDadosJsonDashboard = async () => {
+  try {
+    const usuarios = await getAllUsuarios();
+    const categorias = await getAllCategorias();
+    const livros = await getAllLivros();
+    const pedidos = await db.getAllAsync('SELECT * FROM pedidos ORDER BY criado_em DESC');
+    const itensPedido = await db.getAllAsync('SELECT * FROM itens_pedido ORDER BY id DESC');
+    const enderecos = await db.getAllAsync('SELECT * FROM enderecos ORDER BY id DESC');
+
+    const faturamentoTotal = pedidos.reduce((total, pedido) => {
+      return total + (Number(pedido.total) || 0);
+    }, 0);
+
+    const totalPedidos = pedidos.length;
+    const totalUsuarios = usuarios.length;
+    const totalLivros = livros.length;
+    const totalCategorias = categorias.length;
+
+    const pedidosPorStatus = pedidos.reduce((acc, pedido) => {
+      const status = pedido.status || 'Sem status';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const livrosPorCategoria = categorias.map((categoria) => {
+      const quantidade = livros.filter(
+        (livro) => livro.categoria === categoria.nome
+      ).length;
+
+      return {
+        categoria: categoria.nome,
+        quantidadeLivros: quantidade,
+      };
+    });
+
+    const ticketMedio =
+      totalPedidos > 0 ? Number((faturamentoTotal / totalPedidos).toFixed(2)) : 0;
+
+    const json = {
+      metadata: {
+        projeto: 'Bookflow',
+        geradoEm: new Date().toISOString(),
+        formato: 'json',
+      },
+      resumo: {
+        totalUsuarios,
+        totalCategorias,
+        totalLivros,
+        totalPedidos,
+        totalEnderecos: enderecos.length,
+        totalItensPedido: itensPedido.length,
+        faturamentoTotal,
+        ticketMedio,
+      },
+      indicadores: {
+        pedidosPorStatus,
+        livrosPorCategoria,
+      },
+      dados: {
+        usuarios,
+        categorias,
+        livros,
+        enderecos,
+        pedidos,
+        itensPedido,
+      },
+    };
+
+    return json;
+  } catch (error) {
+    console.error('Erro ao gerar JSON do dashboard:', error);
     throw error;
   }
 };
