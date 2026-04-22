@@ -10,482 +10,310 @@ const db = isWeb
       getFirstAsync: async () => null,
       runAsync: async () => ({ changes: 0, lastInsertRowId: 1 }),
     }
-  : SQLite.openDatabaseSync('usuarios.db');
+  : SQLite.openDatabaseSync('bookflow.db');
+
+
+
+
+
+const inserirStatusPadrao = async () => {
+
+  try {
+
+    const existente = await db.getAllAsync(
+      'SELECT * FROM tb_status'
+    );
+
+    if (existente.length > 0) return;
+
+    const status = [
+      'Pendente',
+      'Pago',
+      'Enviado',
+      'Entregue',
+      'Cancelado'
+    ];
+
+    for (const s of status) {
+
+      await db.runAsync(
+        'INSERT INTO tb_status (ds_status) VALUES (?)',
+        [s]
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error('Erro ao inserir status:', error);
+
+  }
+
+};
+
+
+
+
 
 export const initDatabase = async () => {
+
   try {
+
     await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        idade INTEGER,
-        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+
+      PRAGMA foreign_keys = ON;
+
+
+
+      -- USUARIO
+      CREATE TABLE IF NOT EXISTS tb_usuario (
+
+        id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nome_usuario TEXT,
+        cpf_usuario TEXT,
+        email_usuario TEXT UNIQUE,
+        senha_usuario TEXT,
+        telefone_usuario TEXT,
+        tipo_usuario TEXT,
+
+        data_cadastro DATETIME
+        DEFAULT CURRENT_TIMESTAMP
+
       );
 
-      CREATE TABLE IF NOT EXISTS categorias (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        descricao TEXT,
-        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
 
-      CREATE TABLE IF NOT EXISTS livros (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        titulo TEXT NOT NULL,
-        descricao TEXT,
-        preco REAL NOT NULL,
-        categoria TEXT,
-        imagem_url TEXT,
-        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
 
-      CREATE TABLE IF NOT EXISTS enderecos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario_id INTEGER,
-        logradouro TEXT NOT NULL,
-        numero TEXT,
+      -- ENDERECO
+      CREATE TABLE IF NOT EXISTS tb_endereco (
+
+        id_endereco INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        logradouro TEXT,
+        numero INTEGER,
         complemento TEXT,
         bairro TEXT,
         cidade TEXT,
         estado TEXT,
         cep TEXT,
-        padrao BOOLEAN DEFAULT 0,
-        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+
+        id_usuario INTEGER,
+
+        FOREIGN KEY (id_usuario)
+        REFERENCES tb_usuario(id_usuario)
+
       );
 
-      CREATE TABLE IF NOT EXISTS pedidos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario_id INTEGER,
-        status TEXT DEFAULT 'Pendente',
-        endereco_id INTEGER,
-        total REAL,
-        forma_pagamento TEXT,
-        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(usuario_id) REFERENCES usuarios(id),
-        FOREIGN KEY(endereco_id) REFERENCES enderecos(id)
+
+
+      -- CATEGORIA
+      CREATE TABLE IF NOT EXISTS tb_categoria (
+
+        id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nome_categoria TEXT
+
       );
 
-      CREATE TABLE IF NOT EXISTS itens_pedido (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pedido_id INTEGER,
-        livro_id INTEGER,
+
+
+      -- LIVRO
+      CREATE TABLE IF NOT EXISTS tb_livro (
+
+        id_livro INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        titulo_livro TEXT,
+        autor_livro TEXT,
+        editora_livro TEXT,
+        ano_livro INTEGER,
+        sinopse_livro TEXT,
+        capa_livro TEXT,
+
+        id_categoria INTEGER,
+
+        FOREIGN KEY (id_categoria)
+        REFERENCES tb_categoria(id_categoria)
+
+      );
+
+
+
+      -- FAVORITO
+      CREATE TABLE IF NOT EXISTS tb_favorito (
+
+        id_favorito INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        id_usuario INTEGER,
+        id_livro INTEGER,
+
+        FOREIGN KEY (id_usuario)
+        REFERENCES tb_usuario(id_usuario),
+
+        FOREIGN KEY (id_livro)
+        REFERENCES tb_livro(id_livro)
+
+      );
+
+
+
+      -- CARRINHO
+      CREATE TABLE IF NOT EXISTS tb_carrinho (
+
+        id_carrinho INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        id_usuario INTEGER,
+
+        FOREIGN KEY (id_usuario)
+        REFERENCES tb_usuario(id_usuario)
+
+      );
+
+
+
+      -- ITEM CARRINHO
+      CREATE TABLE IF NOT EXISTS tb_item_carrinho (
+
+        id_item_carrinho INTEGER PRIMARY KEY AUTOINCREMENT,
+
         quantidade INTEGER,
         preco_unitario REAL,
-        FOREIGN KEY(pedido_id) REFERENCES pedidos(id),
-        FOREIGN KEY(livro_id) REFERENCES livros(id)
+
+        id_carrinho INTEGER,
+        id_livro INTEGER,
+
+        FOREIGN KEY (id_carrinho)
+        REFERENCES tb_carrinho(id_carrinho),
+
+        FOREIGN KEY (id_livro)
+        REFERENCES tb_livro(id_livro)
+
       );
+
+
+
+      -- STATUS
+      CREATE TABLE IF NOT EXISTS tb_status (
+
+        id_status INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        ds_status TEXT
+
+      );
+
+
+
+      -- PEDIDO
+      CREATE TABLE IF NOT EXISTS tb_pedido (
+
+        id_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        data_pedido DATETIME
+        DEFAULT CURRENT_TIMESTAMP,
+
+        valor_total REAL,
+
+        id_usuario INTEGER,
+        id_endereco INTEGER,
+        id_status INTEGER,
+
+        FOREIGN KEY (id_usuario)
+        REFERENCES tb_usuario(id_usuario),
+
+        FOREIGN KEY (id_endereco)
+        REFERENCES tb_endereco(id_endereco),
+
+        FOREIGN KEY (id_status)
+        REFERENCES tb_status(id_status)
+
+      );
+
+
+
+      -- ITEM PEDIDO
+      CREATE TABLE IF NOT EXISTS tb_item_pedido (
+
+        id_item_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        quantidade INTEGER,
+        preco_unitario REAL,
+
+        id_pedido INTEGER,
+        id_livro INTEGER,
+
+        FOREIGN KEY (id_pedido)
+        REFERENCES tb_pedido(id_pedido),
+
+        FOREIGN KEY (id_livro)
+        REFERENCES tb_livro(id_livro)
+
+      );
+
+
+
+      -- PAGAMENTO
+      CREATE TABLE IF NOT EXISTS tb_pagamento (
+
+        id_pagamento INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        forma_pagamento TEXT,
+        valor_total REAL,
+
+        id_usuario INTEGER,
+        id_endereco INTEGER,
+        id_status INTEGER,
+
+        FOREIGN KEY (id_usuario)
+        REFERENCES tb_usuario(id_usuario),
+
+        FOREIGN KEY (id_endereco)
+        REFERENCES tb_endereco(id_endereco),
+
+        FOREIGN KEY (id_status)
+        REFERENCES tb_status(id_status)
+
+      );
+
+
+
+      -- AVALIACAO
+      CREATE TABLE IF NOT EXISTS tb_avaliacao (
+
+        id_avaliacao INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        nota INTEGER,
+        comentario TEXT,
+
+        data_avaliacao DATETIME,
+
+        id_pedido INTEGER,
+        id_livro INTEGER,
+
+        FOREIGN KEY (id_pedido)
+        REFERENCES tb_pedido(id_pedido),
+
+        FOREIGN KEY (id_livro)
+        REFERENCES tb_livro(id_livro)
+
+      );
+
     `);
 
-    const migrations = [
-      'ALTER TABLE usuarios ADD COLUMN cpf TEXT;',
-      'ALTER TABLE usuarios ADD COLUMN data_nascimento TEXT;',
-      'ALTER TABLE livros ADD COLUMN estoque INTEGER DEFAULT 0;',
-    ];
+    console.log('Banco criado com sucesso');
 
-    for (const sql of migrations) {
-      try {
-        await db.execAsync(sql);
-      } catch (_) {}
-    }
+    await inserirStatusPadrao();
 
-    console.log('✅ Banco de dados inicializado com sucesso');
     return true;
+
   } catch (error) {
-    console.error('❌ Erro ao inicializar banco de dados:', error);
+
+    console.error('Erro ao criar banco:', error);
+
     return false;
+
   }
+
 };
 
-export const getAllUsuarios = async () => {
-  try {
-    return await db.getAllAsync('SELECT * FROM usuarios ORDER BY id DESC');
-  } catch (error) {
-    console.error('Erro ao buscar usuários:', error);
-    throw error;
-  }
-};
 
-export const getUsuarioById = async (id) => {
-  try {
-    return await db.getFirstAsync('SELECT * FROM usuarios WHERE id = ?', [id]);
-  } catch (error) {
-    console.error('Erro ao buscar usuário:', error);
-    throw error;
-  }
-};
-
-export const createUsuario = async (nome, email, cpf, data_nascimento) => {
-  try {
-    const result = await db.runAsync(
-      'INSERT INTO usuarios (nome, email, cpf, data_nascimento) VALUES (?, ?, ?, ?)',
-      [nome, email, cpf || null, data_nascimento || null]
-    );
-
-    return {
-      id: result.lastInsertRowId,
-      nome,
-      email,
-      cpf,
-      data_nascimento,
-    };
-  } catch (error) {
-    console.error('Erro ao criar usuário:', error);
-    throw error;
-  }
-};
-
-export const updateUsuario = async (id, nome, email, cpf, data_nascimento) => {
-  try {
-    const result = await db.runAsync(
-      'UPDATE usuarios SET nome = ?, email = ?, cpf = ?, data_nascimento = ? WHERE id = ?',
-      [nome, email, cpf || null, data_nascimento || null, id]
-    );
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
-    throw error;
-  }
-};
-
-export const deleteUsuario = async (id) => {
-  try {
-    const result = await db.runAsync('DELETE FROM usuarios WHERE id = ?', [id]);
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao deletar usuário:', error);
-    throw error;
-  }
-};
-
-export const clearAllUsuarios = async () => {
-  try {
-    await db.runAsync('DELETE FROM usuarios');
-    return true;
-  } catch (error) {
-    console.error('Erro ao limpar usuários:', error);
-    throw error;
-  }
-};
-
-export const getAllCategorias = async () => {
-  try {
-    return await db.getAllAsync('SELECT * FROM categorias ORDER BY nome ASC');
-  } catch (error) {
-    console.error('Erro ao buscar categorias:', error);
-    throw error;
-  }
-};
-
-export const createCategoria = async (nome, descricao) => {
-  try {
-    const result = await db.runAsync(
-      'INSERT INTO categorias (nome, descricao) VALUES (?, ?)',
-      [nome, descricao || null]
-    );
-    return { id: result.lastInsertRowId, nome, descricao };
-  } catch (error) {
-    console.error('Erro ao criar categoria:', error);
-    throw error;
-  }
-};
-
-export const updateCategoria = async (id, nome, descricao) => {
-  try {
-    const result = await db.runAsync(
-      'UPDATE categorias SET nome = ?, descricao = ? WHERE id = ?',
-      [nome, descricao || null, id]
-    );
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao atualizar categoria:', error);
-    throw error;
-  }
-};
-
-export const deleteCategoria = async (id) => {
-  try {
-    const result = await db.runAsync('DELETE FROM categorias WHERE id = ?', [id]);
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao deletar categoria:', error);
-    throw error;
-  }
-};
-
-export const getAllLivros = async () => {
-  try {
-    return await db.getAllAsync('SELECT * FROM livros ORDER BY titulo ASC');
-  } catch (error) {
-    console.error('Erro ao buscar livros:', error);
-    throw error;
-  }
-};
-
-export const getLivroById = async (id) => {
-  try {
-    return await db.getFirstAsync('SELECT * FROM livros WHERE id = ?', [id]);
-  } catch (error) {
-    console.error('Erro ao buscar livro:', error);
-    throw error;
-  }
-};
-
-export const searchLivros = async (query) => {
-  try {
-    return await db.getAllAsync(
-      'SELECT * FROM livros WHERE titulo LIKE ? OR categoria LIKE ? ORDER BY titulo ASC',
-      [`%${query}%`, `%${query}%`]
-    );
-  } catch (error) {
-    console.error('Erro ao pesquisar livros:', error);
-    throw error;
-  }
-};
-
-export const createLivro = async (titulo, descricao, preco, estoque, categoria, imagem_url) => {
-  try {
-    const result = await db.runAsync(
-      'INSERT INTO livros (titulo, descricao, preco, estoque, categoria, imagem_url) VALUES (?, ?, ?, ?, ?, ?)',
-      [titulo, descricao || null, preco, estoque || 0, categoria || null, imagem_url || null]
-    );
-    return { id: result.lastInsertRowId, titulo, descricao, preco, estoque, categoria, imagem_url };
-  } catch (error) {
-    console.error('Erro ao criar livro:', error);
-    throw error;
-  }
-};
-
-export const updateLivro = async (id, titulo, descricao, preco, estoque, categoria, imagem_url) => {
-  try {
-    const result = await db.runAsync(
-      'UPDATE livros SET titulo = ?, descricao = ?, preco = ?, estoque = ?, categoria = ?, imagem_url = ? WHERE id = ?',
-      [titulo, descricao || null, preco, estoque || 0, categoria || null, imagem_url || null, id]
-    );
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao atualizar livro:', error);
-    throw error;
-  }
-};
-
-export const deleteLivro = async (id) => {
-  try {
-    const result = await db.runAsync('DELETE FROM livros WHERE id = ?', [id]);
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao deletar livro:', error);
-    throw error;
-  }
-};
-
-export const getEnderecosByUsuario = async (usuario_id) => {
-  try {
-    return await db.getAllAsync(
-      'SELECT * FROM enderecos WHERE usuario_id = ? ORDER BY padrao DESC, id DESC',
-      [usuario_id]
-    );
-  } catch (error) {
-    console.error('Erro ao buscar endereços:', error);
-    throw error;
-  }
-};
-
-export const createEndereco = async (usuario_id, logradouro, numero, complemento, bairro, cidade, estado, cep, padrao) => {
-  try {
-    const result = await db.runAsync(
-      `INSERT INTO enderecos
-        (usuario_id, logradouro, numero, complemento, bairro, cidade, estado, cep, padrao)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        usuario_id,
-        logradouro,
-        numero || null,
-        complemento || null,
-        bairro || null,
-        cidade || null,
-        estado || null,
-        cep || null,
-        padrao ? 1 : 0,
-      ]
-    );
-    return { id: result.lastInsertRowId };
-  } catch (error) {
-    console.error('Erro ao criar endereço:', error);
-    throw error;
-  }
-};
-
-export const updateEndereco = async (id, logradouro, numero, complemento, bairro, cidade, estado, cep, padrao) => {
-  try {
-    const result = await db.runAsync(
-      `UPDATE enderecos
-       SET logradouro = ?, numero = ?, complemento = ?, bairro = ?,
-           cidade = ?, estado = ?, cep = ?, padrao = ?
-       WHERE id = ?`,
-      [
-        logradouro,
-        numero || null,
-        complemento || null,
-        bairro || null,
-        cidade || null,
-        estado || null,
-        cep || null,
-        padrao ? 1 : 0,
-        id,
-      ]
-    );
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao atualizar endereço:', error);
-    throw error;
-  }
-};
-
-export const deleteEndereco = async (id) => {
-  try {
-    const result = await db.runAsync('DELETE FROM enderecos WHERE id = ?', [id]);
-    return result.changes > 0;
-  } catch (error) {
-    console.error('Erro ao deletar endereço:', error);
-    throw error;
-  }
-};
-
-export const getPedidosByUsuario = async (usuario_id) => {
-  try {
-    return await db.getAllAsync(
-      'SELECT * FROM pedidos WHERE usuario_id = ? ORDER BY criado_em DESC',
-      [usuario_id]
-    );
-  } catch (error) {
-    console.error('Erro ao buscar pedidos:', error);
-    throw error;
-  }
-};
-
-export const getPedidoById = async (id) => {
-  try {
-    return await db.getFirstAsync('SELECT * FROM pedidos WHERE id = ?', [id]);
-  } catch (error) {
-    console.error('Erro ao buscar pedido:', error);
-    throw error;
-  }
-};
-
-export const getPedidoItens = async (pedido_id) => {
-  try {
-    return await db.getAllAsync(
-      `SELECT ip.*, l.titulo, l.imagem_url
-       FROM itens_pedido ip
-       JOIN livros l ON ip.livro_id = l.id
-       WHERE ip.pedido_id = ?`,
-      [pedido_id]
-    );
-  } catch (error) {
-    console.error('Erro ao buscar itens do pedido:', error);
-    throw error;
-  }
-};
-
-export const createPedido = async (usuario_id, endereco_id, forma_pagamento, itens) => {
-  try {
-    const total = itens.reduce((sum, i) => sum + i.quantidade * i.preco_unitario, 0);
-
-    const pedidoResult = await db.runAsync(
-      'INSERT INTO pedidos (usuario_id, endereco_id, forma_pagamento, total) VALUES (?, ?, ?, ?)',
-      [usuario_id, endereco_id || null, forma_pagamento, total]
-    );
-    const pedido_id = pedidoResult.lastInsertRowId;
-
-    for (const item of itens) {
-      await db.runAsync(
-        'INSERT INTO itens_pedido (pedido_id, livro_id, quantidade, preco_unitario) VALUES (?, ?, ?, ?)',
-        [pedido_id, item.livro_id, item.quantidade, item.preco_unitario]
-      );
-    }
-
-    return { id: pedido_id, total };
-  } catch (error) {
-    console.error('Erro ao criar pedido:', error);
-    throw error;
-  }
-};
-
-export const gerarDadosJsonDashboard = async () => {
-  try {
-    const usuarios = await getAllUsuarios();
-    const categorias = await getAllCategorias();
-    const livros = await getAllLivros();
-    const pedidos = await db.getAllAsync('SELECT * FROM pedidos ORDER BY criado_em DESC');
-    const itensPedido = await db.getAllAsync('SELECT * FROM itens_pedido ORDER BY id DESC');
-    const enderecos = await db.getAllAsync('SELECT * FROM enderecos ORDER BY id DESC');
-
-    const faturamentoTotal = pedidos.reduce((total, pedido) => {
-      return total + (Number(pedido.total) || 0);
-    }, 0);
-
-    const totalPedidos = pedidos.length;
-    const totalUsuarios = usuarios.length;
-    const totalLivros = livros.length;
-    const totalCategorias = categorias.length;
-
-    const pedidosPorStatus = pedidos.reduce((acc, pedido) => {
-      const status = pedido.status || 'Sem status';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    const livrosPorCategoria = categorias.map((categoria) => {
-      const quantidade = livros.filter(
-        (livro) => livro.categoria === categoria.nome
-      ).length;
-
-      return {
-        categoria: categoria.nome,
-        quantidadeLivros: quantidade,
-      };
-    });
-
-    const ticketMedio =
-      totalPedidos > 0 ? Number((faturamentoTotal / totalPedidos).toFixed(2)) : 0;
-
-    const json = {
-      metadata: {
-        projeto: 'Bookflow',
-        geradoEm: new Date().toISOString(),
-        formato: 'json',
-      },
-      resumo: {
-        totalUsuarios,
-        totalCategorias,
-        totalLivros,
-        totalPedidos,
-        totalEnderecos: enderecos.length,
-        totalItensPedido: itensPedido.length,
-        faturamentoTotal,
-        ticketMedio,
-      },
-      indicadores: {
-        pedidosPorStatus,
-        livrosPorCategoria,
-      },
-      dados: {
-        usuarios,
-        categorias,
-        livros,
-        enderecos,
-        pedidos,
-        itensPedido,
-      },
-    };
-
-    return json;
-  } catch (error) {
-    console.error('Erro ao gerar JSON do dashboard:', error);
-    throw error;
-  }
-};
 
 export default db;
