@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { initDatabase } from "./src/services/database";
+import { initDatabase, createAdmin } from "./src/services/database";
 import JsonDataScreen from "./src/screens/JsonDataScreen";
 import UserListScreen from "./src/screens/UserListScreen";
 import AdminDashboardScreen from "./src/screens/AdminDashboardScreen";
@@ -37,6 +37,7 @@ const Stack = createStackNavigator();
 export default function App() {
   useEffect(() => {
     initDatabase();
+    createAdmin();
   }, []);
 
   return (

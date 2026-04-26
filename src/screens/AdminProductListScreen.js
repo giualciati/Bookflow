@@ -3,7 +3,7 @@ import { FlatList, Alert, View, Dimensions, Modal } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { getAllLivros, deleteLivro } from '../services/database';
+import { getProductsAdmin, deleteProductAdmin } from '../services/api';
 
 const { width } = Dimensions.get('window');
 // Calcula para 3 colunas, descontando paddings
@@ -192,8 +192,8 @@ export default function AdminProductListScreen({ navigation }) {
   const loadLivros = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getAllLivros();
-      setLivros(data);
+      const response = await getProductsAdmin();
+      setLivros(response.data);
     } catch (_) {
       // Ignora err no DB
     } finally {
@@ -217,7 +217,7 @@ export default function AdminProductListScreen({ navigation }) {
     if (!selectedLivro) return;
     try {
       setModalVisible(false);
-      await deleteLivro(selectedLivro.id);
+      await deleteProductAdmin(selectedLivro.id);
       loadLivros();
     } catch (_) {
       Alert.alert('Erro', 'Não foi possível excluir o produto.');
@@ -266,7 +266,7 @@ export default function AdminProductListScreen({ navigation }) {
         ) : (
           <FlatList
             data={livros}
-            keyExtractor={item => String(item.id)}
+            keyExtractor={item => String(item.id_livro)}
             renderItem={renderItem}
             numColumns={3}
             columnWrapperStyle={{ justifyContent: 'space-between' }}

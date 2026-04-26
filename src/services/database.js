@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 const isWeb = Platform.OS === 'web';
 
+// Mock para web (evita erro)
 const db = isWeb
   ? {
       execAsync: async () => {},
@@ -13,307 +14,213 @@ const db = isWeb
   : SQLite.openDatabaseSync('bookflow.db');
 
 
-
-
-
-const inserirStatusPadrao = async () => {
-
+export const loginUser = async (email, senha) => {
   try {
-
-    const existente = await db.getAllAsync(
-      'SELECT * FROM tb_status'
+    const user = await db.getFirstAsync(
+      `SELECT * FROM tb_usuario
+       WHERE email_usuario = ? AND senha_usuario = ?`,
+      [email, senha]
     );
 
-    if (existente.length > 0) return;
-
-    const status = [
-      'Pendente',
-      'Pago',
-      'Enviado',
-      'Entregue',
-      'Cancelado'
-    ];
-
-    for (const s of status) {
-
-      await db.runAsync(
-        'INSERT INTO tb_status (ds_status) VALUES (?)',
-        [s]
-      );
-
-    }
-
+    return user;
   } catch (error) {
-
-    console.error('Erro ao inserir status:', error);
-
+    console.error(error);
+    return null;
   }
-
 };
 
-
-
-
-
+// ─────────────────────────────────────────────
+// 📌 CRIAR BANCO
+// ─────────────────────────────────────────────
 export const initDatabase = async () => {
-
   try {
-
     await db.execAsync(`
 
       PRAGMA foreign_keys = ON;
 
-
-
-      -- USUARIO
       CREATE TABLE IF NOT EXISTS tb_usuario (
-
         id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
-
         nome_usuario TEXT,
-        cpf_usuario TEXT,
         email_usuario TEXT UNIQUE,
         senha_usuario TEXT,
-        telefone_usuario TEXT,
         tipo_usuario TEXT,
-
-        data_cadastro DATETIME
-        DEFAULT CURRENT_TIMESTAMP
-
+        data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
-
-
-      -- ENDERECO
-      CREATE TABLE IF NOT EXISTS tb_endereco (
-
-        id_endereco INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        logradouro TEXT,
-        numero INTEGER,
-        complemento TEXT,
-        bairro TEXT,
-        cidade TEXT,
-        estado TEXT,
-        cep TEXT,
-
-        id_usuario INTEGER,
-
-        FOREIGN KEY (id_usuario)
-        REFERENCES tb_usuario(id_usuario)
-
-      );
-
-
-
-      -- CATEGORIA
       CREATE TABLE IF NOT EXISTS tb_categoria (
-
         id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
-
         nome_categoria TEXT
-
       );
 
-
-
-      -- LIVRO
       CREATE TABLE IF NOT EXISTS tb_livro (
-
         id_livro INTEGER PRIMARY KEY AUTOINCREMENT,
-
         titulo_livro TEXT,
         autor_livro TEXT,
-        editora_livro TEXT,
-        ano_livro INTEGER,
-        sinopse_livro TEXT,
+        preco REAL,
+        estoque INTEGER,
         capa_livro TEXT,
-
         id_categoria INTEGER,
-
-        FOREIGN KEY (id_categoria)
-        REFERENCES tb_categoria(id_categoria)
-
+        FOREIGN KEY (id_categoria) REFERENCES tb_categoria(id_categoria)
       );
 
-
-
-      -- FAVORITO
-      CREATE TABLE IF NOT EXISTS tb_favorito (
-
-        id_favorito INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        id_usuario INTEGER,
-        id_livro INTEGER,
-
-        FOREIGN KEY (id_usuario)
-        REFERENCES tb_usuario(id_usuario),
-
-        FOREIGN KEY (id_livro)
-        REFERENCES tb_livro(id_livro)
-
-      );
-
-
-
-      -- CARRINHO
-      CREATE TABLE IF NOT EXISTS tb_carrinho (
-
-        id_carrinho INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        id_usuario INTEGER,
-
-        FOREIGN KEY (id_usuario)
-        REFERENCES tb_usuario(id_usuario)
-
-      );
-
-
-
-      -- ITEM CARRINHO
-      CREATE TABLE IF NOT EXISTS tb_item_carrinho (
-
-        id_item_carrinho INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        quantidade INTEGER,
-        preco_unitario REAL,
-
-        id_carrinho INTEGER,
-        id_livro INTEGER,
-
-        FOREIGN KEY (id_carrinho)
-        REFERENCES tb_carrinho(id_carrinho),
-
-        FOREIGN KEY (id_livro)
-        REFERENCES tb_livro(id_livro)
-
-      );
-
-
-
-      -- STATUS
-      CREATE TABLE IF NOT EXISTS tb_status (
-
-        id_status INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        ds_status TEXT
-
-      );
-
-
-
-      -- PEDIDO
       CREATE TABLE IF NOT EXISTS tb_pedido (
-
         id_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        data_pedido DATETIME
-        DEFAULT CURRENT_TIMESTAMP,
-
         valor_total REAL,
-
-        id_usuario INTEGER,
-        id_endereco INTEGER,
-        id_status INTEGER,
-
-        FOREIGN KEY (id_usuario)
-        REFERENCES tb_usuario(id_usuario),
-
-        FOREIGN KEY (id_endereco)
-        REFERENCES tb_endereco(id_endereco),
-
-        FOREIGN KEY (id_status)
-        REFERENCES tb_status(id_status)
-
-      );
-
-
-
-      -- ITEM PEDIDO
-      CREATE TABLE IF NOT EXISTS tb_item_pedido (
-
-        id_item_pedido INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        quantidade INTEGER,
-        preco_unitario REAL,
-
-        id_pedido INTEGER,
-        id_livro INTEGER,
-
-        FOREIGN KEY (id_pedido)
-        REFERENCES tb_pedido(id_pedido),
-
-        FOREIGN KEY (id_livro)
-        REFERENCES tb_livro(id_livro)
-
-      );
-
-
-
-      -- PAGAMENTO
-      CREATE TABLE IF NOT EXISTS tb_pagamento (
-
-        id_pagamento INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        forma_pagamento TEXT,
-        valor_total REAL,
-
-        id_usuario INTEGER,
-        id_endereco INTEGER,
-        id_status INTEGER,
-
-        FOREIGN KEY (id_usuario)
-        REFERENCES tb_usuario(id_usuario),
-
-        FOREIGN KEY (id_endereco)
-        REFERENCES tb_endereco(id_endereco),
-
-        FOREIGN KEY (id_status)
-        REFERENCES tb_status(id_status)
-
-      );
-
-
-
-      -- AVALIACAO
-      CREATE TABLE IF NOT EXISTS tb_avaliacao (
-
-        id_avaliacao INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        nota INTEGER,
-        comentario TEXT,
-
-        data_avaliacao DATETIME,
-
-        id_pedido INTEGER,
-        id_livro INTEGER,
-
-        FOREIGN KEY (id_pedido)
-        REFERENCES tb_pedido(id_pedido),
-
-        FOREIGN KEY (id_livro)
-        REFERENCES tb_livro(id_livro)
-
+        data_pedido DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
     `);
 
     console.log('Banco criado com sucesso');
-
-    await inserirStatusPadrao();
-
     return true;
 
   } catch (error) {
-
     console.error('Erro ao criar banco:', error);
-
     return false;
-
   }
+};
 
+export const createAdmin = async () => {
+  try {
+    await db.runAsync(`
+      INSERT INTO tb_usuario (
+        nome_usuario,
+        email_usuario,
+        senha_usuario,
+        tipo_usuario
+      )
+      VALUES (?, ?, ?, ?)
+    `, [
+      'Admin',
+      'admin@email.com',
+      '123456',
+      'admin'
+    ]);
+
+    console.log('Admin criado!');
+  } catch (error) {
+    console.log('Admin já existe');
+  }
+};
+
+// ─────────────────────────────────────────────
+// 📚 LIVROS (PRODUTOS)
+// ─────────────────────────────────────────────
+export const getAllLivros = async () => {
+  try {
+    return await db.getAllAsync(`SELECT * FROM tb_livro`);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const insertLivro = async (titulo, preco, estoque) => {
+  try {
+    const result = await db.runAsync(
+      `INSERT INTO tb_livro (titulo_livro, preco, estoque)
+       VALUES (?, ?, ?)`,
+      [titulo, preco, estoque]
+    );
+    return result;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const updateLivro = async (id, titulo, preco, estoque) => {
+  try {
+    await db.runAsync(
+      `UPDATE tb_livro
+       SET titulo_livro = ?, preco = ?, estoque = ?
+       WHERE id_livro = ?`,
+      [titulo, preco, estoque, id]
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const deleteLivro = async (id) => {
+  try {
+    await db.runAsync(
+      `DELETE FROM tb_livro WHERE id_livro = ?`,
+      [id]
+    );
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 
+// ─────────────────────────────────────────────
+// 👤 USUÁRIOS
+// ─────────────────────────────────────────────
+export const getAllUsuarios = async () => {
+  try {
+    return await db.getAllAsync(`SELECT * FROM tb_usuario`);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
 
+
+// ─────────────────────────────────────────────
+// 📦 PEDIDOS
+// ─────────────────────────────────────────────
+export const getAllPedidos = async () => {
+  try {
+    return await db.getAllAsync(`SELECT * FROM tb_pedido`);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+
+// ─────────────────────────────────────────────
+// 📊 DASHBOARD
+// ─────────────────────────────────────────────
+export const getDashboardData = async () => {
+  try {
+    const usuarios = await db.getFirstAsync(
+      `SELECT COUNT(*) as total FROM tb_usuario`
+    );
+
+    const livros = await db.getFirstAsync(
+      `SELECT COUNT(*) as total FROM tb_livro`
+    );
+
+    const pedidos = await db.getFirstAsync(
+      `SELECT COUNT(*) as total FROM tb_pedido`
+    );
+
+    const faturamento = await db.getFirstAsync(
+      `SELECT SUM(valor_total) as total FROM tb_pedido`
+    );
+
+    return {
+      usuarios: usuarios?.total || 0,
+      livros: livros?.total || 0,
+      pedidos: pedidos?.total || 0,
+      faturamento: faturamento?.total || 0
+    };
+
+  } catch (error) {
+    console.error('Erro no dashboard:', error);
+
+    return {
+      usuarios: 0,
+      livros: 0,
+      pedidos: 0,
+      faturamento: 0
+    };
+  }
+};
+
+
+// ─────────────────────────────────────────────
+// 🚀 EXPORT
+// ─────────────────────────────────────────────
 export default db;

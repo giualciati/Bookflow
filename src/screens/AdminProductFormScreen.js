@@ -4,6 +4,7 @@ import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { insertLivro, updateLivro, getAllCategorias } from '../services/database';
+import { createProductAdmin, updateProductAdmin } from '../services/api';
 
 // ─── Styled Components ────────────────────────────────────────────────────────
 
@@ -135,10 +136,24 @@ export default function AdminProductFormScreen({ route, navigation }) {
     try {
       setSaving(true);
       if (isEditing) {
-        await updateLivro(livro.id, titulo, descricao, parseFloat(preco), parseInt(estoque, 10), categoria, imagemUrl);
+        await updateProductAdmin(livro.id, {
+          name: titulo,
+          descricao: descricao,
+          price: parseFloat(preco),
+          estoque: estoque,
+          categoria: categoria,
+          imagem: imagemUrl
+        });
         Alert.alert('Sucesso', 'Produto atualizado!');
       } else {
-        await insertLivro(titulo, descricao, parseFloat(preco), parseInt(estoque, 10), categoria, imagemUrl);
+        await createProductAdmin({
+            name: titulo,
+            descricao: descricao,
+            price: parseFloat(preco),
+            estoque: estoque,
+            categoria: categoria,
+            imagem: imagemUrl
+        });
         Alert.alert('Sucesso', 'Produto criado!');
       }
       navigation.goBack();

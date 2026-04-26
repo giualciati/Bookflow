@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { loginUser } from "../services/database";
 
 import { Color, Border, FontSize, FontFamily } from "../styles/GlobalStyles";
 
@@ -14,10 +15,21 @@ export default function LogInScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     console.log({ email, senha });
 
-    navigation.replace("Home");
+    const user = await loginUser(email, senha);
+
+    if (!user) {
+      alert("Email ou senha inválidos");
+      return;
+    }
+
+    if (user.tipo_usuario === "admin") {
+      navigation.replace("AdminDashboard");
+    } else {
+      navigation.replace("Home");
+    }
   };
 
   return (
